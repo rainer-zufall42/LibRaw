@@ -250,6 +250,8 @@ int LibRaw::open_buffer(const void *buffer, size_t size)
   return ret;
 }
 
+typedef ushort ushort4[4];
+
 int LibRaw::open_bayer(const unsigned char *buffer, unsigned datalen,
                        ushort _raw_width, ushort _raw_height,
                        ushort _left_margin, ushort _top_margin,
@@ -258,26 +260,29 @@ int LibRaw::open_bayer(const unsigned char *buffer, unsigned datalen,
                        unsigned unused_bits, unsigned otherflags,
                        unsigned black_level)
 {
-  // this stream will close on recycle()
-  if (!buffer || buffer == (const void *)-1)
-    return LIBRAW_IO_ERROR;
+  if (!buffer)
+    imgdata.image = (ushort4*)malloc(_raw_width * _raw_height * sizeof(ushort4));
 
-  LibRaw_buffer_datastream *stream;
-  try
-  {
-    stream = new LibRaw_buffer_datastream(buffer, datalen);
-  }
-  catch (const std::bad_alloc& )
-  {
-    recycle();
-    return LIBRAW_UNSUFFICIENT_MEMORY;
-  }
-  if (!stream->valid())
-  {
-    delete stream;
-    return LIBRAW_IO_ERROR;
-  }
-  ID.input = stream;
+  // this stream will close on recycle()
+  // if (!buffer || buffer == (const void *)-1)
+  //   return LIBRAW_IO_ERROR;
+
+  // LibRaw_buffer_datastream *stream;
+  // try
+  // {
+  //   stream = new LibRaw_buffer_datastream(buffer, datalen);
+  // }
+  // catch (const std::bad_alloc& )
+  // {
+  //   recycle();
+  //   return LIBRAW_UNSUFFICIENT_MEMORY;
+  // }
+  // if (!stream->valid())
+  // {
+  //   delete stream;
+  //   return LIBRAW_IO_ERROR;
+  // }
+  // ID.input = stream;
   SET_PROC_FLAG(LIBRAW_PROGRESS_OPEN);
   // From identify
   initdata();

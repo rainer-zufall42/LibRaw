@@ -197,6 +197,7 @@ struct DHT
   void make_rb();
   void hide_hots();
   void restore_hots();
+  void injectFltImg();
 };
 
 typedef float float3[3];
@@ -220,33 +221,94 @@ DHT::DHT(LibRaw &_libraw) : libraw(_libraw)
   nraw = (float3 *)malloc(nr_height * nr_width * sizeof(float3));
   int iwidth = libraw.imgdata.sizes.iwidth;
   ndir = (char *)calloc(nr_height * nr_width, 1);
-  channel_maximum[0] = channel_maximum[1] = channel_maximum[2] = 0;
-  channel_minimum[0] = libraw.imgdata.image[0][0];
-  channel_minimum[1] = libraw.imgdata.image[0][1];
-  channel_minimum[2] = libraw.imgdata.image[0][2];
-  for (int i = 0; i < nr_height * nr_width; ++i)
-    nraw[i][0] = nraw[i][1] = nraw[i][2] = 0.5;
-  for (int i = 0; i < libraw.imgdata.sizes.iheight; ++i)
+  // channel_maximum[0] = channel_maximum[1] = channel_maximum[2] = 0;
+  // channel_minimum[0] = libraw.imgdata.image[0][0];
+  // channel_minimum[1] = libraw.imgdata.image[0][1];
+  // channel_minimum[2] = libraw.imgdata.image[0][2];
+  // for (int i = 0; i < nr_height * nr_width; ++i)
+  //   nraw[i][0] = nraw[i][1] = nraw[i][2] = 0.5;
+  // for (int i = 0; i < libraw.imgdata.sizes.iheight; ++i)
+  // {
+  //   int col_cache[48];
+  //   for (int j = 0; j < 48; ++j)
+  //   {
+  //     int l = libraw.COLOR(i, j);
+  //     if (l == 3)
+  //       l = 1;
+  //     col_cache[j] = l;
+  //   }
+  //   for (int j = 0; j < iwidth; ++j)
+  //   {
+  //     int l = col_cache[j % 48];
+  //     // printf("l = %d  ", l);
+  //     unsigned short c = libraw.imgdata.image[i * iwidth + j][l];
+  //     // printf("c = %d\n", c);
+  //     if (c != 0)
+  //     {
+  //       if (channel_maximum[l] < c)
+  //         channel_maximum[l] = c;
+  //       if (channel_minimum[l] > c)
+  //         channel_minimum[l] = c;
+  //       nraw[nr_offset(i + nr_topmargin, j + nr_leftmargin)][l] = (float)c;
+  //     }
+  //   }
+  // }
+  // channel_minimum[0] += .5;
+  // channel_minimum[1] += .5;
+  // channel_minimum[2] += .5;
+
+
+  // libraw.imgdata.fltImg = (float*)malloc(nr_height * nr_width * sizeof(float3));
+  // memcpy(libraw.imgdata.fltImg, nraw, nr_height * nr_width * sizeof(float3));
+  // int iheight = libraw.imgdata.sizes.iheight;
+  // for (int i = 0; i < iwidth * iheight; ++i)
+  //   libraw.imgdata.image[i][0] = libraw.imgdata.image[i][1] = libraw.imgdata.image[i][2] = libraw.imgdata.image[i][3] = 0;
+  // libraw.imgdata.fltImg = (float*)malloc(nr_height * nr_width * sizeof(float3));
+  // memcpy(libraw.imgdata.fltImg, nraw, nr_height * nr_width * sizeof(float3));
+}
+
+void DHT::injectFltImg(){
+  memcpy(nraw, libraw.imgdata.fltImg, libraw.imgdata.nBytes);
+  int iwidth = libraw.imgdata.sizes.iwidth;
+
+  channel_minimum[0] = FLT_MAX;
+  channel_minimum[1] = FLT_MAX;
+  channel_minimum[2] = FLT_MAX;
+  for (int i = 0; i < libraw.imgdata.sizes.iheight; i+=2)
   {
-    int col_cache[48];
-    for (int j = 0; j < 48; ++j)
+    for (int j = 0; j < iwidth; j+=2)
     {
-      int l = libraw.COLOR(i, j);
-      if (l == 3)
-        l = 1;
-      col_cache[j] = l;
-    }
-    for (int j = 0; j < iwidth; ++j)
-    {
-      int l = col_cache[j % 48];
-      unsigned short c = libraw.imgdata.image[i * iwidth + j][l];
-      if (c != 0)
+      float r = nraw[nr_offset(i + nr_topmargin, j + nr_leftmargin)][0];
+      float g1 = nraw[nr_offset(i + nr_topmargin + 1, j + nr_leftmargin)][1];
+      float g2 = nraw[nr_offset(i + nr_topmargin, j + nr_leftmargin + 1)][1];
+      float b = nraw[nr_offset(i + nr_topmargin + 1, j + nr_leftmargin + 1)][2];
+      if (r != 0)
       {
-        if (channel_maximum[l] < c)
-          channel_maximum[l] = c;
-        if (channel_minimum[l] > c)
-          channel_minimum[l] = c;
-        nraw[nr_offset(i + nr_topmargin, j + nr_leftmargin)][l] = (float)c;
+        if (channel_maximum[0] < r)
+          channel_maximum[0] = r;
+        if (channel_minimum[0] > r)
+          channel_minimum[0] = r;
+      }
+      if (g1 != 0)
+      {
+        if (channel_maximum[1] < g1)
+          channel_maximum[1] = g1;
+        if (channel_minimum[1] > g1)
+          channel_minimum[1] = g1;
+      }
+      if (g2 != 0)
+      {
+        if (channel_maximum[1] < g2)
+          channel_maximum[1] = g2;
+        if (channel_minimum[1] > g2)
+          channel_minimum[1] = g2;
+      }
+      if (b != 0)
+      {
+        if (channel_maximum[2] < b)
+          channel_maximum[2] = b;
+        if (channel_minimum[2] > b)
+          channel_minimum[2] = b;
       }
     }
   }
@@ -1001,6 +1063,7 @@ void DHT::copy_to_image()
                                               j + nr_leftmargin)][1]);
     }
   }
+  memcpy(libraw.imgdata.fltImg, nraw, nr_height * nr_width * sizeof(float3));
 }
 
 DHT::~DHT()
@@ -1012,6 +1075,7 @@ DHT::~DHT()
 void LibRaw::dht_interpolate()
 {
   DHT dht(*this);
+  dht.injectFltImg();
   dht.hide_hots();
   dht.make_hv_dirs();
   //	dht.illustrate_dirs();

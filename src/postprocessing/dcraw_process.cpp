@@ -22,7 +22,7 @@ int LibRaw::dcraw_process(void)
   float preser = 0;
   float expos = 1.0;
 
-  CHECK_ORDER_LOW(LIBRAW_PROGRESS_LOAD_RAW);
+  // CHECK_ORDER_LOW(LIBRAW_PROGRESS_LOAD_RAW);
   //    CHECK_ORDER_HIGH(LIBRAW_PROGRESS_PRE_INTERPOLATE);
 
   try
@@ -118,7 +118,7 @@ int LibRaw::dcraw_process(void)
     if (callbacks.pre_preinterpolate_cb)
       (callbacks.pre_preinterpolate_cb)(this);
 
-    pre_interpolate();
+    // pre_interpolate();
 
     SET_PROC_FLAG(LIBRAW_PROGRESS_PRE_INTERPOLATE);
 
@@ -177,6 +177,8 @@ int LibRaw::dcraw_process(void)
         ahd_interpolate();
         imgdata.process_warnings |= LIBRAW_WARN_FALLBACK_TO_AHD;
       }
+
+      return 0;
 
       SET_PROC_FLAG(LIBRAW_PROGRESS_INTERPOLATE);
     }

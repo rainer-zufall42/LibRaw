@@ -297,6 +297,8 @@ public:
 
   int COLOR(int row, int col)
   {
+    if (imgdata.nBytes)
+      return fcol(row, col);
     if (!imgdata.idata.filters)
       return 6; /* Special value 0+1+2+3 */
     if (imgdata.idata.filters < 1000)
